@@ -1,4 +1,4 @@
-package eu.unifiedviews.plugins.loader.ckan;
+package eu.unifiedviews.plugins.loader.files2ckan;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +46,7 @@ import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
 
 @DPU.AsLoader
-public class CKAN extends ConfigurableBase<CKANConfig_V1> implements ConfigDialogProvider<CKANConfig_V1> {
+public class Files2Ckan extends ConfigurableBase<Files2CkanConfig_V1> implements ConfigDialogProvider<Files2CkanConfig_V1> {
     public static final String PROXY_API_ACTION = "action";
 
     public static final String PROXY_API_PIPELINE_ID = "pipeline_id";
@@ -73,13 +73,13 @@ public class CKAN extends ConfigurableBase<CKANConfig_V1> implements ConfigDialo
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
-    private static final Logger LOG = LoggerFactory.getLogger(CKAN.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Files2Ckan.class);
 
     @DataUnit.AsInput(name = "filesInput")
     public FilesDataUnit filesInput;
 
-    public CKAN() {
-        super(CKANConfig_V1.class);
+    public Files2Ckan() {
+        super(Files2CkanConfig_V1.class);
     }
 
     @Override
@@ -203,8 +203,8 @@ public class CKAN extends ConfigurableBase<CKANConfig_V1> implements ConfigDialo
     }
 
     @Override
-    public AbstractConfigDialog<CKANConfig_V1> getConfigurationDialog() {
-        return new CKANVaadinDialog();
+    public AbstractConfigDialog<Files2CkanConfig_V1> getConfigurationDialog() {
+        return new Files2CkanVaadinDialog();
     }
 
     private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource) {
