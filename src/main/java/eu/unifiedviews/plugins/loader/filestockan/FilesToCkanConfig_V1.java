@@ -1,9 +1,9 @@
-package eu.unifiedviews.plugins.loader.files2ckan;
+package eu.unifiedviews.plugins.loader.filestockan;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class Files2CkanConfig_V1 {
+public class FilesToCkanConfig_V1 {
     private String catalogApiLocation = "http://localhost/internalcatalog/uv";
 
     private Long pipelineId = 0L;
@@ -12,7 +12,7 @@ public class Files2CkanConfig_V1 {
 
     private String token = "secret_token";
 
-    public Files2CkanConfig_V1() {
+    public FilesToCkanConfig_V1() {
     }
 
     public String getCatalogApiLocation() {

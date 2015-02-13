@@ -1,4 +1,4 @@
-package eu.unifiedviews.plugins.loader.files2ckan;
+package eu.unifiedviews.plugins.loader.filestockan;
 
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.FormLayout;
@@ -11,7 +11,7 @@ import eu.unifiedviews.helpers.dpu.config.BaseConfigDialog;
  * DPU's configuration dialog. User can use this dialog to configure DPU
  * configuration.
  */
-public class Files2CkanVaadinDialog extends BaseConfigDialog<Files2CkanConfig_V1> {
+public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_V1> {
 
     private static final long serialVersionUID = -5668436075836909428L;
 
@@ -23,8 +23,8 @@ public class Files2CkanVaadinDialog extends BaseConfigDialog<Files2CkanConfig_V1
 
     private ObjectProperty<Long> pipelineId = new ObjectProperty<Long>(0L);
 
-    public Files2CkanVaadinDialog() {
-        super(Files2CkanConfig_V1.class);
+    public FilesToCkanVaadinDialog() {
+        super(FilesToCkanConfig_V1.class);
         initialize();
     }
 
@@ -46,16 +46,16 @@ public class Files2CkanVaadinDialog extends BaseConfigDialog<Files2CkanConfig_V1
     }
 
     @Override
-    public void setConfiguration(Files2CkanConfig_V1 conf)
+    public void setConfiguration(FilesToCkanConfig_V1 conf)
             throws DPUConfigException {
         catalogApiLocation.setValue(conf.getCatalogApiLocation());
         pipelineId.setValue(conf.getPipelineId());
     }
 
     @Override
-    public Files2CkanConfig_V1 getConfiguration()
+    public FilesToCkanConfig_V1 getConfiguration()
             throws DPUConfigException {
-        Files2CkanConfig_V1 conf = new Files2CkanConfig_V1();
+        FilesToCkanConfig_V1 conf = new FilesToCkanConfig_V1();
         conf.setCatalogApiLocation(catalogApiLocation.getValue());
         conf.setPipelineId(pipelineId.getValue());
         return conf;
