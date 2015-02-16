@@ -73,6 +73,8 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
+    public static final String SECRET_TOKEN = "secret_token";
+
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
     @DataUnit.AsInput(name = "filesInput")
@@ -87,6 +89,12 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
         String shortMessage = this.getClass().getSimpleName() + " starting.";
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
+//        Map<String, String> environment = dpuContext.getEnvironment();
+        String secretToken = "sss";//environment.get(SECRET_TOKEN);
+//        if (environment.get(SECRET_TOKEN) == null || environment.get(SECRET_TOKEN).isEmpty()) {
+//            secretToken = null;
+//        }
+        String userId = dpuContext.getPipelineOwner();
 
         if (filesInput == null) {
             throw new DPUException("No input data unit for me, exiting");
@@ -101,16 +109,21 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
             uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
-            HttpEntity entity = MultipartEntityBuilder.create()
-                    .addTextBody(PROXY_API_ACTION, CKAN_API_PACKAGE_SHOW, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                    .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(config.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                    .addTextBody(PROXY_API_USER_ID, config.getUserId(), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                    .addTextBody(PROXY_API_TOKEN, config.getToken(), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                    .build();
+            MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
+                    .addTextBody(PROXY_API_ACTION, CKAN_API_PACKAGE_SHOW, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+            //                    .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(dpuContext.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+
+            if (userId != null) {
+                entityBuilder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+            }
+            if (secretToken != null) {
+                entityBuilder.addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+            }
+            HttpEntity entity = entityBuilder.build();
             httpPost.setEntity(entity);
             response = client.execute(httpPost);
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new DPUException("Could not obtain Dataset entity from CKAN. Request: " + EntityUtils.toString(entity) + " Response:" + EntityUtils.toString(response.getEntity()));
+                throw new DPUException("Could not obtain Dataset entity from CKAN. Response:" + EntityUtils.toString(response.getEntity()));
             }
 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
@@ -159,13 +172,16 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                     uriBuilder.setPath(uriBuilder.getPath());
                     HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
                     MultipartEntityBuilder builder = MultipartEntityBuilder.create()
-                            .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(config.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                            .addTextBody(PROXY_API_USER_ID, config.getUserId(), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                            .addTextBody(PROXY_API_TOKEN, config.getToken(), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                            //                            .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(dpuContext.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_STORAGE_ID, storageId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
-
+                    if (userId != null) {
+                        builder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+                    }
+                    if (secretToken != null) {
+                        builder.addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+                    }
                     if (existingResources.containsKey(storageId)) {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_UPDATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     } else {
@@ -177,7 +193,14 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
                     responseUpdate = client.execute(httpPost);
                     if (responseUpdate.getStatusLine().getStatusCode() == 200) {
-                        LOG.info("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
+                        JsonReader reader = readerFactory.createReader(responseUpdate.getEntity().getContent());
+                        JsonObject resourceResponse = reader.readObject();
+                        if (resourceResponse.getBoolean("success")) {
+                            LOG.info("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        } else {
+                            LOG.error("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        }
                     } else {
                         LOG.error("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
                     }

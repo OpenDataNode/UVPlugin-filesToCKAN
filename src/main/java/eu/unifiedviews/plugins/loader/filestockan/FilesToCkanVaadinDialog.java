@@ -17,11 +17,7 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
 
     private static final String CATALOG_API_LOCATION_LABEL = "Catalog API location";
 
-    private static final String PIPELINE_ID_LABEL = "Pipeline ID";
-
     private ObjectProperty<String> catalogApiLocation = new ObjectProperty<String>("");
-
-    private ObjectProperty<Long> pipelineId = new ObjectProperty<Long>(0L);
 
     public FilesToCkanVaadinDialog() {
         super(FilesToCkanConfig_V1.class);
@@ -39,9 +35,6 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
         txtApiLocation.setWidth("100%");
         mainLayout.addComponent(txtApiLocation);
 
-        TextField txtPipelineId = new TextField(PIPELINE_ID_LABEL, pipelineId);
-        txtPipelineId.setWidth("100%");
-        mainLayout.addComponent(txtPipelineId);
         setCompositionRoot(mainLayout);
     }
 
@@ -49,7 +42,6 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
     public void setConfiguration(FilesToCkanConfig_V1 conf)
             throws DPUConfigException {
         catalogApiLocation.setValue(conf.getCatalogApiLocation());
-        pipelineId.setValue(conf.getPipelineId());
     }
 
     @Override
@@ -57,7 +49,6 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
             throws DPUConfigException {
         FilesToCkanConfig_V1 conf = new FilesToCkanConfig_V1();
         conf.setCatalogApiLocation(catalogApiLocation.getValue());
-        conf.setPipelineId(pipelineId.getValue());
         return conf;
     }
 
