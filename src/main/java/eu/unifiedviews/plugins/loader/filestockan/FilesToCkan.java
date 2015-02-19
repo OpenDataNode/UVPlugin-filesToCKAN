@@ -89,12 +89,21 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
         String shortMessage = this.getClass().getSimpleName() + " starting.";
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
-//        Map<String, String> environment = dpuContext.getEnvironment();
-        String secretToken = "sss";//environment.get(SECRET_TOKEN);
-//        if (environment.get(SECRET_TOKEN) == null || environment.get(SECRET_TOKEN).isEmpty()) {
-//            secretToken = null;
-//        }
-        String userId = dpuContext.getPipelineOwner();
+//      Map<String, String> environment = dpuContext.getEnvironment();
+//      String secretToken = environment.get(SECRET_TOKEN);
+//    if (environment.get(SECRET_TOKEN) == null || environment.get(SECRET_TOKEN).isEmpty()) {
+//        secretToken = null;
+//    }
+        String secretToken = "secret_token";
+//    String userId = dpuContext.getPipelineOwner();
+        String userId = "mvi";
+//    String pipelineId = String.valueOf(dpuContext.getPipelineId());
+        String pipelineId = "2";
+        String catalogApiLocation = "http://localhost:81/api/action/internal_api";
+//      String catalogApiLocation = environment.get("catalogApiLocation");
+//      if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
+//          throw new DPUException("No configuration value for catalogApiLocation");
+//      }
 
         if (filesInput == null) {
             throw new DPUException("No input data unit for me, exiting");
@@ -105,14 +114,17 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
         try {
             CloseableHttpClient client = HttpClients.createDefault();
             URIBuilder uriBuilder;
-            uriBuilder = new URIBuilder(config.getCatalogApiLocation());
+            uriBuilder = new URIBuilder(catalogApiLocation);
 
             uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
             MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
+                    .addTextBody(PROXY_API_DATA, "{}", ContentType.APPLICATION_JSON.withCharset("UTF-8"))
                     .addTextBody(PROXY_API_ACTION, CKAN_API_PACKAGE_SHOW, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-            //                    .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(dpuContext.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
 
+            if (pipelineId != null) {
+                entityBuilder.addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+            }
             if (userId != null) {
                 entityBuilder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
             }
@@ -130,8 +142,10 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
             JsonReader reader = readerFactory.createReader(response.getEntity().getContent());
             JsonObject dataset = reader.readObject();
             JsonArray resources = dataset.getJsonArray("resources");
-            for (JsonObject resource : resources.getValuesAs(JsonObject.class)) {
-                existingResources.put(resource.getString("name"), resource.getString("id"));
+            if (resources != null) {
+                for (JsonObject resource : resources.getValuesAs(JsonObject.class)) {
+                    existingResources.put(resource.getString("name"), resource.getString("id"));
+                }
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
             throw new DPUException("Cannot obtain dataset from CKAN", ex);
@@ -168,14 +182,17 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                         resourceBuilder.add("id", existingResources.get(storageId));
                     }
 
-                    URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
+                    URIBuilder uriBuilder = new URIBuilder(catalogApiLocation);
                     uriBuilder.setPath(uriBuilder.getPath());
                     HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
                     MultipartEntityBuilder builder = MultipartEntityBuilder.create()
-                            //                            .addTextBody(PROXY_API_PIPELINE_ID, String.valueOf(dpuContext.getPipelineId()), ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_STORAGE_ID, storageId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
+
+                    if (pipelineId != null) {
+                        builder.addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
+                    }
                     if (userId != null) {
                         builder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     }

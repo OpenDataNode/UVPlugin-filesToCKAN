@@ -4,17 +4,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class FilesToCkanConfig_V1 {
-    private String catalogApiLocation = "http://localhost/internalcatalog/uv";
 
     public FilesToCkanConfig_V1() {
-    }
-
-    public String getCatalogApiLocation() {
-        return catalogApiLocation;
-    }
-
-    public void setCatalogApiLocation(String catalogApiLocation) {
-        this.catalogApiLocation = catalogApiLocation;
     }
 
     @Override
