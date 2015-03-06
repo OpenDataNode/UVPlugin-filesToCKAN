@@ -33,7 +33,7 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
         setWidth("100%");
         setHeight("100%");
 
-        TextField txtCatalogApiLocation = new TextField(messages.getString("dialog.catalogApiLocation"), catalogApiLocation);
+        TextField txtCatalogApiLocation = new TextField(messages.getString("FilesToCkanVaadinDialog.catalogApiLocation"), catalogApiLocation);
         txtCatalogApiLocation.setWidth("100%");
 
         setCompositionRoot(mainLayout);
