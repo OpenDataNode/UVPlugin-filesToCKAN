@@ -44,6 +44,7 @@ import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
 import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
 import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
+import eu.unifiedviews.helpers.dpu.localization.Messages;
 
 @DPU.AsLoader
 public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implements ConfigDialogProvider<FilesToCkanConfig_V1> {
@@ -88,23 +89,31 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
     @Override
     public void execute(DPUContext dpuContext) throws DPUException, InterruptedException {
-        String shortMessage = this.getClass().getSimpleName() + " starting.";
+        Messages messages = new Messages(dpuContext.getLocale(), getClass().getClassLoader());
+        
+        String shortMessage = messages.getString("FilesToCkan.execute.start", this.getClass().getSimpleName()); 
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
         Map<String, String> environment = dpuContext.getEnvironment();
-        String secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
-        if (environment.get(CONFIGURATION_SECRET_TOKEN) == null || environment.get(CONFIGURATION_SECRET_TOKEN).isEmpty()) {
+        String secretToken = config.getSecretToken();
+        if (secretToken == null || secretToken.isEmpty()) {
+            secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
+        }
+        if (secretToken == null || secretToken.isEmpty()) {
             secretToken = null;
+        }
+        String catalogApiLocation = config.getCatalogApiLocation();
+        if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
+            catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
+        }
+        if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
+            throw new DPUException( messages.getString("FilesToCkan.execute.exception.missingCatalogApiLocation"));
         }
         String userId = dpuContext.getPipelineOwner();
         String pipelineId = String.valueOf(dpuContext.getPipelineId());
-        String catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
-        if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
-            throw new DPUException("No configuration value for catalogApiLocation");
-        }
 
         if (filesInput == null) {
-            throw new DPUException("No input data unit for me, exiting");
+            throw new DPUException(messages.getString("FilesToCkan.execute.exception.missingInput"));
         }
 
         CloseableHttpResponse response = null;
@@ -133,7 +142,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
             httpPost.setEntity(entity);
             response = client.execute(httpPost);
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new DPUException("Could not obtain Dataset entity from CKAN. Response:" + EntityUtils.toString(response.getEntity()));
+                throw new DPUException(messages.getString("FilesToCkan.execute.exception.noDataset"));
             }
 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
@@ -146,7 +155,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                 }
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
-            throw new DPUException("Cannot obtain dataset from CKAN", ex);
+            throw new DPUException(messages.getString("FilesToCkan.execute.exception.noDataset"), ex);
         } finally {
             if (response != null) {
                 try {
@@ -164,7 +173,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
             try {
                 files = FilesHelper.getFiles(filesInput);
             } catch (DataUnitException ex1) {
-                throw new DPUException("Could not iterate files input", ex1);
+                throw new DPUException(messages.getString("FilesToCkan.execute.exception.dataunit"), ex1);
             }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
@@ -214,13 +223,15 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                         if (resourceResponse.getBoolean("success")) {
                             LOG.info("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
                         } else {
-                            LOG.error("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                            LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                            throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"));
                         }
                     } else {
-                        LOG.error("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"));
                     }
                 } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
-                    throw new DPUException("Error exporting metadata", ex);
+                    throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"), ex);
                 } finally {
                     if (responseUpdate != null) {
                         try {

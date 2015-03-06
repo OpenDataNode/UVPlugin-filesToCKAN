@@ -4,6 +4,25 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class FilesToCkanConfig_V1 {
+    private String catalogApiLocation;
+
+    private String secretToken;
+
+    public String getCatalogApiLocation() {
+        return catalogApiLocation;
+    }
+
+    public void setCatalogApiLocation(String catalogApiLocation) {
+        this.catalogApiLocation = catalogApiLocation;
+    }
+
+    public String getSecretToken() {
+        return secretToken;
+    }
+
+    public void setSecretToken(String secretToken) {
+        this.secretToken = secretToken;
+    }
 
     public FilesToCkanConfig_V1() {
     }
