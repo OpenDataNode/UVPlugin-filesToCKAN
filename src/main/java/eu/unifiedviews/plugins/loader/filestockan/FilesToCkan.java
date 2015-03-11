@@ -76,7 +76,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
     public static final String CONFIGURATION_SECRET_TOKEN = "dpu.l-filesToCkan.secret.token";
 
-    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.l-filesToCka.catalog.api.location";
+    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.l-filesToCkan.catalog.api.url";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
