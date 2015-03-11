@@ -74,9 +74,9 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
-    public static final String CONFIGURATION_SECRET_TOKEN = "secret_token";
+    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.l-filesToCkan.secret.token";
 
-    public static final String CONFIGURATION_CATALOG_API_LOCATION = "catalogApiLocation";
+    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.l-filesToCka.catalog.api.location";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
