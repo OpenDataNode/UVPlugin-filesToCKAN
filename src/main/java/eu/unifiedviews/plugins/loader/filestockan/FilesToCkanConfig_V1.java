@@ -8,6 +8,19 @@ public class FilesToCkanConfig_V1 {
 
     private String secretToken;
 
+    private Boolean replaceExisting = Boolean.TRUE;
+
+    public FilesToCkanConfig_V1() {
+    }
+
+    public Boolean getReplaceExisting() {
+        return replaceExisting;
+    }
+
+    public void setReplaceExisting(Boolean replaceExisting) {
+        this.replaceExisting = replaceExisting;
+    }
+
     public String getCatalogApiLocation() {
         return catalogApiLocation;
     }
@@ -22,9 +35,6 @@ public class FilesToCkanConfig_V1 {
 
     public void setSecretToken(String secretToken) {
         this.secretToken = secretToken;
-    }
-
-    public FilesToCkanConfig_V1() {
     }
 
     @Override

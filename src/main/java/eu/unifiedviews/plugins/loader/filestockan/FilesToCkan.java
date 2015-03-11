@@ -186,7 +186,11 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                     resource.setName(storageId);
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
                     if (existingResources.containsKey(storageId)) {
-                        resourceBuilder.add("id", existingResources.get(storageId));
+                        if (config.getReplaceExisting()) {
+                            resourceBuilder.add("id", existingResources.get(storageId));
+                        } else {
+                            throw new DPUException(messages.getString("FilesToCkan.execute.exception.replaceExisting", storageId));
+                        }
                     }
 
                     URIBuilder uriBuilder = new URIBuilder(catalogApiLocation);
@@ -230,6 +234,8 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                         LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
                         throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"));
                     }
+                } catch (DPUException ex) {
+                    throw ex;
                 } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
                     throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"), ex);
                 } finally {
