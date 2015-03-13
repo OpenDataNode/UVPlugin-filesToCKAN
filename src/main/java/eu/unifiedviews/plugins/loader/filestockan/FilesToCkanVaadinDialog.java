@@ -39,8 +39,10 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
 
         TextField txtCatalogApiLocation = new TextField(messages.getString("FilesToCkanVaadinDialog.catalogApiLocation"), catalogApiLocation);
         txtCatalogApiLocation.setWidth("100%");
+        mainLayout.addComponent(txtCatalogApiLocation);
 
         CheckBox box = new CheckBox(messages.getString("FilesToCkanVaadinDialog.replaceExisting"), replaceExisting);
+        mainLayout.addComponent(box);
         
         setCompositionRoot(mainLayout);
     }
