@@ -95,20 +95,17 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
         Map<String, String> environment = dpuContext.getEnvironment();
-        String secretToken = config.getSecretToken();
+
+        String secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
         if (secretToken == null || secretToken.isEmpty()) {
-            secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
+            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingSecretToken");
         }
-        if (secretToken == null || secretToken.isEmpty()) {
-            secretToken = null;
-        }
-        String catalogApiLocation = config.getCatalogApiLocation();
-        if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
-            catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
-        }
+
+        String catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
         if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
             throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
         }
+
         String userId = dpuContext.getPipelineOwner();
         String pipelineId = String.valueOf(dpuContext.getPipelineId());
 
@@ -127,17 +124,11 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
             MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
                     .addTextBody(PROXY_API_DATA, "{}", ContentType.APPLICATION_JSON.withCharset("UTF-8"))
+                    .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                    .addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                    .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                     .addTextBody(PROXY_API_ACTION, CKAN_API_PACKAGE_SHOW, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
 
-            if (pipelineId != null) {
-                entityBuilder.addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-            }
-            if (userId != null) {
-                entityBuilder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-            }
-            if (secretToken != null) {
-                entityBuilder.addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-            }
             HttpEntity entity = entityBuilder.build();
             httpPost.setEntity(entity);
             response = client.execute(httpPost);
@@ -209,17 +200,11 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     MultipartEntityBuilder builder = MultipartEntityBuilder.create()
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_STORAGE_ID, storageId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                            .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                            .addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                            .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
 
-                    if (pipelineId != null) {
-                        builder.addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-                    }
-                    if (userId != null) {
-                        builder.addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-                    }
-                    if (secretToken != null) {
-                        builder.addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
-                    }
                     if (existingResources.containsKey(storageId)) {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_UPDATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     } else {

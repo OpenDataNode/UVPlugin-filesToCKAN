@@ -14,13 +14,20 @@
 
 ***
 
-###Configuration parameters###
+###Dialog configuration parameters###
 
 
 |Parameter                        |Description                             |                                                        
 |---------------------------------|----------------------------------------|
-|**secret_token** |Token used to authenticate to CKAN, has to be set in backend.properties  |
-|**catalogApiLocation** | URL where CKAN api is located, has to be set in backend.properties |
+|**Overwrite existing resources** |If checked, existing resources are overwritten  |
+
+***
+
+###Configuration parameters###
+|Parameter                             |Description                             |                                                        
+|--------------------------------------|----------------------------------------|
+|**dpu.l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
+|**dpu.l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
 
 ***
 
