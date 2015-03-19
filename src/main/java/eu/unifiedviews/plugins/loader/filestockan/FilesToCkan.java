@@ -36,18 +36,17 @@ import eu.unifiedviews.dataunit.files.FilesDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
-import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.Resource;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceConverter;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
-import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
-import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
-import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
-import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
-import eu.unifiedviews.helpers.dpu.localization.Messages;
+import eu.unifiedviews.helpers.dataunit.files.FilesHelper;
+import eu.unifiedviews.helpers.dataunit.resource.Resource;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceHelpers;
+import eu.unifiedviews.helpers.dataunit.virtualpath.VirtualPathHelpers;
+import eu.unifiedviews.helpers.dpu.config.ConfigHistory;
+import eu.unifiedviews.helpers.dpu.context.ContextUtils;
+import eu.unifiedviews.helpers.dpu.exec.AbstractDpu;
 
 @DPU.AsLoader
-public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implements ConfigDialogProvider<FilesToCkanConfig_V1> {
+public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
     public static final String PROXY_API_ACTION = "action";
 
     public static final String PROXY_API_PIPELINE_ID = "pipeline_id";
@@ -83,15 +82,16 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
     @DataUnit.AsInput(name = "filesInput")
     public FilesDataUnit filesInput;
 
+    private DPUContext dpuContext;
+
     public FilesToCkan() {
-        super(FilesToCkanConfig_V1.class);
+        super(FilesToCkanVaadinDialog.class, ConfigHistory.noHistory(FilesToCkanConfig_V1.class));
     }
 
     @Override
-    public void execute(DPUContext dpuContext) throws DPUException, InterruptedException {
-        Messages messages = new Messages(dpuContext.getLocale(), getClass().getClassLoader());
-        
-        String shortMessage = messages.getString("FilesToCkan.execute.start", this.getClass().getSimpleName()); 
+    protected void innerExecute() throws DPUException {
+        this.dpuContext = this.ctx.getExecMasterContext().getDpuContext();
+        String shortMessage = this.ctx.tr("FilesToCkan.execute.start", this.getClass().getSimpleName());
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
         Map<String, String> environment = dpuContext.getEnvironment();
@@ -107,13 +107,13 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
             catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
         }
         if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
-            throw new DPUException( messages.getString("FilesToCkan.execute.exception.missingCatalogApiLocation"));
+            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
         }
         String userId = dpuContext.getPipelineOwner();
         String pipelineId = String.valueOf(dpuContext.getPipelineId());
 
         if (filesInput == null) {
-            throw new DPUException(messages.getString("FilesToCkan.execute.exception.missingInput"));
+            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingInput");
         }
 
         CloseableHttpResponse response = null;
@@ -149,10 +149,10 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                     LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
                 } else {
                     LOG.warn("Response:" + EntityUtils.toString(response.getEntity()));
-                    throw new DPUException(messages.getString("FilesToCkan.execute.exception.noDataset"));
+                    throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
                 }
             } else {
-                throw new DPUException(messages.getString("FilesToCkan.execute.exception.noDataset"));
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
             }
 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
@@ -165,7 +165,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                 }
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
-            throw new DPUException(messages.getString("FilesToCkan.execute.exception.noDataset"), ex);
+            throw ContextUtils.dpuException(this.ctx, ex, "FilesToCkan.execute.exception.noDataset");
         } finally {
             if (response != null) {
                 try {
@@ -183,7 +183,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
             try {
                 files = FilesHelper.getFiles(filesInput);
             } catch (DataUnitException ex1) {
-                throw new DPUException(messages.getString("FilesToCkan.execute.exception.dataunit"), ex1);
+                throw ContextUtils.dpuException(this.ctx, ex1, "FilesToCkan.execute.exception.dataunit");
             }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
@@ -199,7 +199,7 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                         if (config.getReplaceExisting()) {
                             resourceBuilder.add("id", existingResources.get(storageId));
                         } else {
-                            throw new DPUException(messages.getString("FilesToCkan.execute.exception.replaceExisting", storageId));
+                            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.replaceExisting", storageId);
                         }
                     }
 
@@ -238,16 +238,16 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                             LOG.info("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
                         } else {
                             LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
-                            throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"));
+                            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.fail");
                         }
                     } else {
                         LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
-                        throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"));
+                        throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.fail");
                     }
                 } catch (DPUException ex) {
                     throw ex;
                 } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
-                    throw new DPUException(messages.getString("FilesToCkan.execute.exception.fail"), ex);
+                    throw ContextUtils.dpuException(this.ctx, ex, "FilesToCkan.execute.exception.fail");
                 } finally {
                     if (responseUpdate != null) {
                         try {
@@ -265,11 +265,6 @@ public class FilesToCkan extends ConfigurableBase<FilesToCkanConfig_V1> implemen
                 LOG.warn("Error in close", ex);
             }
         }
-    }
-
-    @Override
-    public AbstractConfigDialog<FilesToCkanConfig_V1> getConfigurationDialog() {
-        return new FilesToCkanVaadinDialog();
     }
 
     private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource) {

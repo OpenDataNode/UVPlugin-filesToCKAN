@@ -1,20 +1,18 @@
 package eu.unifiedviews.plugins.loader.filestockan;
 
-
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.TextField;
 
 import eu.unifiedviews.dpu.config.DPUConfigException;
-import eu.unifiedviews.helpers.dpu.config.BaseConfigDialog;
-import eu.unifiedviews.helpers.dpu.localization.Messages;
+import eu.unifiedviews.helpers.dpu.vaadin.dialog.AbstractDialog;
 
 /**
  * DPU's configuration dialog. User can use this dialog to configure DPU
  * configuration.
  */
-public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_V1> {
+public class FilesToCkanVaadinDialog extends AbstractDialog<FilesToCkanConfig_V1> {
 
     private static final long serialVersionUID = -56684360836909428L;
 
@@ -22,28 +20,25 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
 
     private ObjectProperty<Boolean> replaceExisting = new ObjectProperty<Boolean>(Boolean.TRUE);
 
-    private Messages messages;
-
     public FilesToCkanVaadinDialog() {
-        super(FilesToCkanConfig_V1.class);
-        initialize();
+        super(FilesToCkan.class);
     }
 
-    private void initialize() {
-        messages = new Messages(getContext().getLocale(), this.getClass().getClassLoader());
+    @Override
+    protected void buildDialogLayout() {
         FormLayout mainLayout = new FormLayout();
 
         // top-level component properties
         setWidth("100%");
         setHeight("100%");
 
-        TextField txtCatalogApiLocation = new TextField(messages.getString("FilesToCkanVaadinDialog.catalogApiLocation"), catalogApiLocation);
+        TextField txtCatalogApiLocation = new TextField(this.ctx.tr("FilesToCkanVaadinDialog.catalogApiLocation"), catalogApiLocation);
         txtCatalogApiLocation.setWidth("100%");
         mainLayout.addComponent(txtCatalogApiLocation);
 
-        CheckBox box = new CheckBox(messages.getString("FilesToCkanVaadinDialog.replaceExisting"), replaceExisting);
+        CheckBox box = new CheckBox(this.ctx.tr("FilesToCkanVaadinDialog.replaceExisting"), replaceExisting);
         mainLayout.addComponent(box);
-        
+
         setCompositionRoot(mainLayout);
     }
 
@@ -65,4 +60,5 @@ public class FilesToCkanVaadinDialog extends BaseConfigDialog<FilesToCkanConfig_
     public String getDescription() {
         return catalogApiLocation.getValue();
     }
+
 }
