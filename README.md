@@ -43,8 +43,7 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
-|1.0.0-SNAPSHOT     |N/A                                             |
-|1.0.1-SNAPSHOT     |Migration to v 2.0 DPU helpers                  |
+|1.0.0              |First release                                   |
 
 
 ***
