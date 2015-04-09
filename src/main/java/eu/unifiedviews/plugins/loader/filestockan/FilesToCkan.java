@@ -73,9 +73,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
-    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.l-filesToCkan.secret.token";
+    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
 
-    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.l-filesToCkan.catalog.api.url";
+    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
