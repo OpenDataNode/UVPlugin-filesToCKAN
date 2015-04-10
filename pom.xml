@@ -10,7 +10,7 @@
 		<relativePath />
 	</parent>
 
-	<groupId>eu.unifiedviews.plugins</groupId>
+	<groupId>eu.opendatanode.plugins</groupId>
 	<artifactId>uv-l-filesToCkan</artifactId>
 	<name>L-FilesToCkan</name>
 	<description>Loads files as resources to CKAN catalog</description>
