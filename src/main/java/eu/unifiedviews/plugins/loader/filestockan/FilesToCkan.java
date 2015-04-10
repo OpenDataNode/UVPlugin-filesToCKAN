@@ -147,11 +147,16 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                 throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
             }
 
-            JsonArray resources = resourceResponse.getJsonArray("resources");
+            JsonArray resources = resourceResponse.getJsonObject("result").getJsonArray("resources");
             if (resources != null) {
                 for (JsonObject resource : resources.getValuesAs(JsonObject.class)) {
-                    existingResources.put(resource.getString("name"), resource.getString("id"));
+                    String resourceName = resource.getString("name");
+                    String resourceId = resource.getString("id");
+                    LOG.debug("Found resource with name {} and id {}", resourceName, resourceId);
+                    existingResources.put(resourceName, resourceId);
                 }
+            } else {
+                LOG.debug("Resources are null !!!!");
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
             throw ContextUtils.dpuException(this.ctx, ex, "FilesToCkan.execute.exception.noDataset");
