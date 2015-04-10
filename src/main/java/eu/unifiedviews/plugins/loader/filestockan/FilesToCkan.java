@@ -155,8 +155,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     LOG.debug("Found resource with name {} and id {}", resourceName, resourceId);
                     existingResources.put(resourceName, resourceId);
                 }
-            } else {
-                LOG.debug("Resources are null !!!!");
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
             throw ContextUtils.dpuException(this.ctx, ex, "FilesToCkan.execute.exception.noDataset");
@@ -181,15 +179,20 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
+                boolean bResourceExists = false;
                 try {
                     String storageId = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
+                    if (existingResources.containsKey(storageId)) {
+                        bResourceExists = true;
+                        resource.setCreated(null);
+                    }
                     resource.setName(storageId);
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
-                    if (existingResources.containsKey(storageId)) {
+                    if (bResourceExists) {
                         if (config.getReplaceExisting()) {
                             resourceBuilder.add("id", existingResources.get(storageId));
                         } else {
@@ -208,7 +211,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                             .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
 
-                    if (existingResources.containsKey(storageId)) {
+                    if (bResourceExists) {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_UPDATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     } else {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_CREATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
