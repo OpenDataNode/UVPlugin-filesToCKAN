@@ -73,9 +73,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
-    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.l-filesToCkan.secret.token";
+    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
 
-    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.l-filesToCkan.catalog.api.url";
+    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
@@ -147,10 +147,13 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                 throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
             }
 
-            JsonArray resources = resourceResponse.getJsonArray("resources");
+            JsonArray resources = resourceResponse.getJsonObject("result").getJsonArray("resources");
             if (resources != null) {
                 for (JsonObject resource : resources.getValuesAs(JsonObject.class)) {
-                    existingResources.put(resource.getString("name"), resource.getString("id"));
+                    String resourceName = resource.getString("name");
+                    String resourceId = resource.getString("id");
+                    LOG.debug("Found resource with name {} and id {}", resourceName, resourceId);
+                    existingResources.put(resourceName, resourceId);
                 }
             }
         } catch (URISyntaxException | IllegalStateException | IOException ex) {
@@ -176,15 +179,20 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
+                boolean bResourceExists = false;
                 try {
                     String storageId = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
+                    if (existingResources.containsKey(storageId)) {
+                        bResourceExists = true;
+                        resource.setCreated(null);
+                    }
                     resource.setName(storageId);
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
-                    if (existingResources.containsKey(storageId)) {
+                    if (bResourceExists) {
                         if (config.getReplaceExisting()) {
                             resourceBuilder.add("id", existingResources.get(storageId));
                         } else {
@@ -203,7 +211,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                             .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
 
-                    if (existingResources.containsKey(storageId)) {
+                    if (bResourceExists) {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_UPDATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     } else {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_CREATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
@@ -251,16 +259,15 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
     }
 
     private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource) {
-        JsonObjectBuilder resourceExtrasBuilder = factory.createObjectBuilder();
-        for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
-            resourceExtrasBuilder.add(mapEntry.getKey(), mapEntry.getValue());
-        }
 
         JsonObjectBuilder resourceBuilder = factory.createObjectBuilder();
         for (Map.Entry<String, String> mapEntry : ResourceConverter.resourceToMap(resource).entrySet()) {
             resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
         }
-        resourceBuilder.add("extras", resourceExtrasBuilder);
+
+        for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
+            resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+        }
 
         return resourceBuilder;
     }
