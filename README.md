@@ -26,8 +26,8 @@
 ###Configuration parameters###
 |Parameter                             |Description                             |                                                        
 |--------------------------------------|----------------------------------------|
-|**dpu.l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
-|**dpu.l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
+|**dpu.uv-l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
+|**dpu.uv-l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
 
 ***
 
