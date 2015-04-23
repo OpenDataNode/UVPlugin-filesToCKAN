@@ -10,11 +10,11 @@
 		<relativePath />
 	</parent>
 
-	<groupId>eu.opendatanode.plugins</groupId>
+	<groupId>org.opendatanode.plugins</groupId>
 	<artifactId>uv-l-filesToCkan</artifactId>
 	<name>L-FilesToCkan</name>
 	<description>Loads files as resources to CKAN catalog</description>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.1</version>
 	<packaging>bundle</packaging>
 
 	<properties>

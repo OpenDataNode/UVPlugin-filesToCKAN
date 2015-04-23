@@ -8,23 +8,23 @@
 |**Name:**                     |L-FilesToCkan                                             |
 |**Description:**              |Loads files to the specified CKAN instance. |
 |                              |                                                               |
-|**DPU class name:**           |FilesToCkan     | 
+|**DPU class name:**           |FilesToCkan     |
 |**Configuration class name:** |FilesToCkanConfig_V1                           |
-|**Dialogue class name:**      |FilesToCkanVaadinDialog | 
+|**Dialogue class name:**      |FilesToCkanVaadinDialog |
 
 ***
 
 ###Dialog configuration parameters###
 
 
-|Parameter                        |Description                             |                                                        
+|Parameter                        |Description                             |
 |---------------------------------|----------------------------------------|
 |**Overwrite existing resources** |If checked, existing resources are overwritten  |
 
 ***
 
 ###Configuration parameters###
-|Parameter                             |Description                             |                                                        
+|Parameter                             |Description                             |
 |--------------------------------------|----------------------------------------|
 |**dpu.uv-l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
 |**dpu.uv-l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
@@ -43,7 +43,8 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
-|1.0.0              |First release                                   |
+|1.0.1              | bug fixes and update in build dependencies |
+|1.0.0              | First release                                   |
 
 
 ***
@@ -52,5 +53,5 @@
 
 |Author            |Notes                 |
 |------------------|----------------------|
-|N/A               |N/A                   | 
+|N/A               |N/A                   |
 
