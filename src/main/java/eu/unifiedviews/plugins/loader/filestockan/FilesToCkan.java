@@ -132,10 +132,16 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             HttpEntity entity = entityBuilder.build();
             httpPost.setEntity(entity);
             response = client.execute(httpPost);
+
+            if (response.getStatusLine().getStatusCode() != 200) {
+                LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
+            }
+
+            // Checking success parameter of CKAN response 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
             JsonReader reader = readerFactory.createReader(response.getEntity().getContent());
             JsonObject resourceResponse = reader.readObject();
-
             if (response.getStatusLine().getStatusCode() == 200) {
                 if (resourceResponse.getBoolean("success")) {
                     LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
@@ -143,8 +149,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     LOG.warn("Response:" + EntityUtils.toString(response.getEntity()));
                     throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
                 }
-            } else {
-                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
             }
 
             JsonArray resources = resourceResponse.getJsonObject("result").getJsonArray("resources");
