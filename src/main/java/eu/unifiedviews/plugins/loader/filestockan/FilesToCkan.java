@@ -113,6 +113,18 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingInput");
         }
 
+        Set<FilesDataUnit.Entry> files;
+        try {
+            files = FilesHelper.getFiles(this.filesInput);
+        } catch (DataUnitException ex1) {
+            throw ContextUtils.dpuException(this.ctx, ex1, "FilesToCkan.execute.exception.dataunit");
+        }
+
+        if (files.size() != 1 && !this.config.isUseFileNameAsResourceName()) {
+            ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short", "FilesToCkan.execute.exception.filesCount.long");
+            return;
+        }
+
         CloseableHttpResponse response = null;
         Map<String, String> existingResources = new HashMap<>();
         try {
@@ -175,12 +187,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         JsonBuilderFactory factory = Json.createBuilderFactory(Collections.<String, Object> emptyMap());
         CloseableHttpClient client = HttpClients.createDefault();
         try {
-            Set<FilesDataUnit.Entry> files;
-            try {
-                files = FilesHelper.getFiles(filesInput);
-            } catch (DataUnitException ex1) {
-                throw ContextUtils.dpuException(this.ctx, ex1, "FilesToCkan.execute.exception.dataunit");
-            }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
                 boolean bResourceExists = false;
@@ -194,7 +200,12 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                         bResourceExists = true;
                         resource.setCreated(null);
                     }
-                    resource.setName(storageId);
+                    if (this.config.isUseFileNameAsResourceName()) {
+                        resource.setName(storageId);
+                    } else {
+                        resource.setName(this.config.getResourceName());
+                    }
+
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
                     if (bResourceExists) {
                         if (config.getReplaceExisting()) {
