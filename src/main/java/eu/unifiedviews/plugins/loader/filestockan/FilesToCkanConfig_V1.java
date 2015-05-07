@@ -7,6 +7,10 @@ public class FilesToCkanConfig_V1 {
 
     private Boolean replaceExisting = Boolean.TRUE;
 
+    private String resourceName;
+
+    private boolean useFileNameAsResourceName = false;
+
     public FilesToCkanConfig_V1() {
     }
 
@@ -16,6 +20,22 @@ public class FilesToCkanConfig_V1 {
 
     public void setReplaceExisting(Boolean replaceExisting) {
         this.replaceExisting = replaceExisting;
+    }
+
+    public String getResourceName() {
+        return this.resourceName;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    public boolean isUseFileNameAsResourceName() {
+        return this.useFileNameAsResourceName;
+    }
+
+    public void setUseFileNameAsResourceName(boolean useFileNameAsResourceName) {
+        this.useFileNameAsResourceName = useFileNameAsResourceName;
     }
 
     @Override

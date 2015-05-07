@@ -2,7 +2,8 @@ package eu.unifiedviews.plugins.loader.filestockan;
 
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.CheckBox;
-import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.TextField;
+import com.vaadin.ui.VerticalLayout;
 
 import eu.unifiedviews.dpu.config.DPUConfigException;
 import eu.unifiedviews.helpers.dpu.vaadin.dialog.AbstractDialog;
@@ -17,33 +18,65 @@ public class FilesToCkanVaadinDialog extends AbstractDialog<FilesToCkanConfig_V1
 
     private ObjectProperty<Boolean> replaceExisting = new ObjectProperty<Boolean>(Boolean.TRUE);
 
+    private ObjectProperty<Boolean> useFileNameAsResourceName = new ObjectProperty<Boolean>(Boolean.FALSE);
+
+    private TextField txtResourceName;
+
+    private VerticalLayout mainLayout;
+
     public FilesToCkanVaadinDialog() {
         super(FilesToCkan.class);
     }
 
     @Override
     protected void buildDialogLayout() {
-        FormLayout mainLayout = new FormLayout();
-
         // top-level component properties
         setWidth("100%");
         setHeight("100%");
 
-        CheckBox box = new CheckBox(this.ctx.tr("FilesToCkanVaadinDialog.replaceExisting"), replaceExisting);
-        mainLayout.addComponent(box);
+        this.mainLayout = new VerticalLayout();
+        this.mainLayout.setWidth("100%");
+        this.mainLayout.setHeight("-1px");
+        this.mainLayout.setSpacing(true);
+        this.mainLayout.setMargin(true);
 
-        setCompositionRoot(mainLayout);
+        this.txtResourceName = new TextField();
+        this.txtResourceName.setNullRepresentation("");
+        this.txtResourceName.setRequired(false);
+        this.txtResourceName.setCaption(this.ctx.tr("FilesToCkanVaadinDialog.ckan.resource.name"));
+        this.txtResourceName.setWidth("100%");
+        this.txtResourceName.setDescription(this.ctx.tr("FilesToCkanVaadinDialog.resource.name.help"));
+        this.mainLayout.addComponent(this.txtResourceName);
+
+        CheckBox useFileNameAsResourceNameCheckBox = new CheckBox(this.ctx.tr("FilesToCkanVaadinDialog.useFileName"), this.useFileNameAsResourceName);
+        useFileNameAsResourceNameCheckBox.setDescription(this.ctx.tr("FilesToCkanVaadinDialog.useFileName.help"));
+        this.mainLayout.addComponent(useFileNameAsResourceNameCheckBox);
+
+        CheckBox replaceCheckBox = new CheckBox(this.ctx.tr("FilesToCkanVaadinDialog.replaceExisting"), this.replaceExisting);
+        this.mainLayout.addComponent(replaceCheckBox);
+
+        setCompositionRoot(this.mainLayout);
     }
 
     @Override
     public void setConfiguration(FilesToCkanConfig_V1 conf) throws DPUConfigException {
-        replaceExisting.setValue(conf.getReplaceExisting());
+        this.replaceExisting.setValue(conf.getReplaceExisting());
+        this.txtResourceName.setValue(conf.getResourceName());
+        this.useFileNameAsResourceName.setValue(conf.isUseFileNameAsResourceName());
     }
 
     @Override
     public FilesToCkanConfig_V1 getConfiguration() throws DPUConfigException {
+        boolean isValid = (this.txtResourceName.getValue() != null && !this.txtResourceName.getValue().equals(""))
+                || this.useFileNameAsResourceName.getValue();
+        if (!isValid) {
+            throw new DPUConfigException(this.ctx.tr("FilesToCkanVaadinDialog.errors.configuration"));
+        }
+
         FilesToCkanConfig_V1 conf = new FilesToCkanConfig_V1();
-        conf.setReplaceExisting(replaceExisting.getValue());
+        conf.setReplaceExisting(this.replaceExisting.getValue());
+        conf.setResourceName(this.txtResourceName.getValue());
+        conf.setUseFileNameAsResourceName(this.useFileNameAsResourceName.getValue());
         return conf;
     }
 
