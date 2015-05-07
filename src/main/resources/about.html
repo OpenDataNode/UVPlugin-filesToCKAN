@@ -12,6 +12,10 @@ Also, prior to running this DPU, an association between pipeline and CKAN datase
 <p/>
 List of options:
 <ul>
+	<li><b>CKAN resource name</b> - Name of resource to be created in CKAN. It should not change between pipeline runs as this name
+	is used as key to CKAN.</li>
+	<li><b>Use file name as CKAN resource name</b> - (default false) If selected, file name is used as CKAN resource name. When multiple input files,
+	this option must be selected. Otherwise DPU fails  
     <li><b>Overwrite existing resources</b> - (default false) if true and resource with the same name already exists in associated 
     dataset, it is overwritten.</li>
 </ul>

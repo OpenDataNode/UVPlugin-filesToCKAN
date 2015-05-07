@@ -19,7 +19,10 @@
 
 |Parameter                        |Description                             |
 |---------------------------------|----------------------------------------|
+|**CKAN resource name** |Resource name to create in CKAN  |
+|**Use file name as CKAN resource name** |If checked, file name is used as resource name in CKAN. Must be checked if multiple files on input, otherwise DPU fails  |
 |**Overwrite existing resources** |If checked, existing resources are overwritten  |
+
 
 ***
 
@@ -43,6 +46,7 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
+|1.1.0              | Added possibility to name CKAN resource when one file on input |
 |1.0.1              | bug fixes and update in build dependencies |
 |1.0.0              | First release                                   |
 
