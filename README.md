@@ -47,6 +47,7 @@
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
 |1.1.0              | Added possibility to name CKAN resource when one file on input |
+|                   | Changes in DPU API v 2.1.0, new actor ID parameter is sent to CKAN if available |
 |1.0.1              | bug fixes and update in build dependencies |
 |1.0.0              | First release                                   |
 
