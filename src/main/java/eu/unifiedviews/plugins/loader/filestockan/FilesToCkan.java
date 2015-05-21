@@ -73,9 +73,29 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
-    public static final String CONFIGURATION_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_SECRET_TOKEN}
+     */
+    @Deprecated
+    public static final String CONFIGURATION_DPU_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
 
-    public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_CATALOG_API_LOCATION}
+     */
+    @Deprecated
+    public static final String CONFIGURATION_DPU_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
+
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_HTTP_HEADER}
+     */
+    @Deprecated
+    public static final String CONFIGURATION_DPU_HTTP_HEADER = "dpu.uv-l-filesToCkan.http.header.";
+
+    public static final String CONFIGURATION_SECRET_TOKEN = "org.opendatanode.CKAN.secret.token";
+
+    public static final String CONFIGURATION_CATALOG_API_LOCATION = "org.opendatanode.CKAN.api.url";
+
+    public static final String CONFIGURATION_HTTP_HEADER = "org.opendatanode.CKAN.http.header.";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
@@ -97,13 +117,40 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         Map<String, String> environment = dpuContext.getEnvironment();
 
         String secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
-        if (secretToken == null || secretToken.isEmpty()) {
-            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingSecretToken");
+        if (isEmpty(secretToken)) {
+            LOG.debug("Missing global configuration for CKAN secret token, trying to use DPU specific configuration");
+            secretToken = environment.get(CONFIGURATION_DPU_SECRET_TOKEN);
+            if (isEmpty(secretToken)) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingSecretToken");
+            }
         }
 
         String catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
-        if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
-            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
+        if (isEmpty(catalogApiLocation)) {
+            LOG.debug("Missing global configuration for CKAN API location, trying to use DPU specific configuration");
+            catalogApiLocation = environment.get(CONFIGURATION_DPU_CATALOG_API_LOCATION);
+            if (isEmpty(catalogApiLocation)) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
+            }
+        }
+
+        Map<String, String> additionalHttpHeaders = new HashMap<>();
+        for (Map.Entry<String, String> configEntry : environment.entrySet()) {
+            if (configEntry.getKey().startsWith(CONFIGURATION_HTTP_HEADER)) {
+                String headerName = configEntry.getKey().replace(CONFIGURATION_HTTP_HEADER, "");
+                String headerValue = configEntry.getValue();
+                additionalHttpHeaders.put(headerName, headerValue);
+            }
+        }
+        if (additionalHttpHeaders.isEmpty()) {
+            LOG.debug("Missing global configuration for additional HTTP headers, trying to use DPU specific configuration");
+            for (Map.Entry<String, String> configEntry : environment.entrySet()) {
+                if (configEntry.getKey().startsWith(CONFIGURATION_DPU_HTTP_HEADER)) {
+                    String headerName = configEntry.getKey().replace(CONFIGURATION_DPU_HTTP_HEADER, "");
+                    String headerValue = configEntry.getValue();
+                    additionalHttpHeaders.put(headerName, headerValue);
+                }
+            }
         }
 
         String userId = dpuContext.getPipelineOwner();
@@ -122,6 +169,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
             uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
+            for (Map.Entry<String, String> additionalHeader : additionalHttpHeaders.entrySet()) {
+                httpPost.addHeader(additionalHeader.getKey(), additionalHeader.getValue());
+            }
             MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
                     .addTextBody(PROXY_API_DATA, "{}", ContentType.APPLICATION_JSON.withCharset("UTF-8"))
                     .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
@@ -203,6 +253,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     URIBuilder uriBuilder = new URIBuilder(catalogApiLocation);
                     uriBuilder.setPath(uriBuilder.getPath());
                     HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
+                    for (Map.Entry<String, String> additionalHeader : additionalHttpHeaders.entrySet()) {
+                        httpPost.addHeader(additionalHeader.getKey(), additionalHeader.getValue());
+                    }
                     MultipartEntityBuilder builder = MultipartEntityBuilder.create()
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_STORAGE_ID, storageId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
@@ -256,6 +309,13 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                 LOG.warn("Error in close", ex);
             }
         }
+    }
+
+    private static boolean isEmpty(String value) {
+        if (value == null || value.isEmpty()) {
+            return true;
+        }
+        return false;
     }
 
     private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource) {
