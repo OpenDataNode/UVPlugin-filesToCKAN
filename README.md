@@ -31,6 +31,7 @@
 |--------------------------------------|----------------------------------------|
 |**dpu.uv-l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
 |**dpu.uv-l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
+|**dpu.uv-l-filesToCkan.http.header.key = value** | Custom HTTP header added to requests on CKAN, example: dpu.uv-l-filesToCkan.http.header.Host = www.myhost.com |
 
 ***
 
@@ -46,6 +47,7 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
+|1.2.0-SNAPSHOT              | Added possibility to define custom HTTP headers using dpu.uv-l-filesToCkan.http.header.key = value in UV configuration file. Example: dpu.uv-l-filesToCkan.http.header.Host = www.myhost.com |
 |1.1.0              | Added possibility to name CKAN resource when one file on input |
 |                   | Changes in DPU API v 2.1.0, new actor ID parameter is sent to CKAN if available |
 |1.0.1              | bug fixes and update in build dependencies |
