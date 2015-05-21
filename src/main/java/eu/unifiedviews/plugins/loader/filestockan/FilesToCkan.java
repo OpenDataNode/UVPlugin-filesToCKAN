@@ -73,9 +73,13 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
+    public static final String CKAN_API_ACTOR_ID = "actor_id";
+
     public static final String CONFIGURATION_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
 
     public static final String CONFIGURATION_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
+
+    public static final String CONFIGURATION_HTTP_HEADER = "dpu.uv-l-filesToCkan.http.header.";
 
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
@@ -105,12 +109,32 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         if (catalogApiLocation == null || catalogApiLocation.isEmpty()) {
             throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
         }
-
-        String userId = dpuContext.getPipelineOwner();
+        Map<String, String> additionalHttpHeaders = new HashMap<>();
+        for (Map.Entry<String, String> configEntry : environment.entrySet()) {
+            if (configEntry.getKey().startsWith(CONFIGURATION_HTTP_HEADER)) {
+                String headerName =configEntry.getKey().replace(CONFIGURATION_HTTP_HEADER, "");
+                String headerValue = configEntry.getValue();
+                additionalHttpHeaders.put(headerName, headerValue);
+            }
+        }
+        String userId = (this.dpuContext.getPipelineExecutionOwnerExternalId() != null) ? this.dpuContext.getPipelineExecutionOwnerExternalId()
+                : this.dpuContext.getPipelineExecutionOwner();
         String pipelineId = String.valueOf(dpuContext.getPipelineId());
 
         if (filesInput == null) {
             throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingInput");
+        }
+
+        Set<FilesDataUnit.Entry> files;
+        try {
+            files = FilesHelper.getFiles(this.filesInput);
+        } catch (DataUnitException ex1) {
+            throw ContextUtils.dpuException(this.ctx, ex1, "FilesToCkan.execute.exception.dataunit");
+        }
+
+        if (files.size() != 1 && !this.config.isUseFileNameAsResourceName()) {
+            ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short", "FilesToCkan.execute.exception.filesCount.long");
+            return;
         }
 
         CloseableHttpResponse response = null;
@@ -122,6 +146,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
             uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
+            for (Map.Entry<String, String> additionalHeader : additionalHttpHeaders.entrySet()) {
+                httpPost.addHeader(additionalHeader.getKey(), additionalHeader.getValue());
+            }
             MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
                     .addTextBody(PROXY_API_DATA, "{}", ContentType.APPLICATION_JSON.withCharset("UTF-8"))
                     .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
@@ -132,10 +159,16 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             HttpEntity entity = entityBuilder.build();
             httpPost.setEntity(entity);
             response = client.execute(httpPost);
+
+            if (response.getStatusLine().getStatusCode() != 200) {
+                LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
+            }
+
+            // Checking success parameter of CKAN response 
             JsonReaderFactory readerFactory = Json.createReaderFactory(Collections.<String, Object> emptyMap());
             JsonReader reader = readerFactory.createReader(response.getEntity().getContent());
             JsonObject resourceResponse = reader.readObject();
-
             if (response.getStatusLine().getStatusCode() == 200) {
                 if (resourceResponse.getBoolean("success")) {
                     LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
@@ -143,8 +176,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     LOG.warn("Response:" + EntityUtils.toString(response.getEntity()));
                     throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
                 }
-            } else {
-                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.noDataset");
             }
 
             JsonArray resources = resourceResponse.getJsonObject("result").getJsonArray("resources");
@@ -171,41 +202,45 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         JsonBuilderFactory factory = Json.createBuilderFactory(Collections.<String, Object> emptyMap());
         CloseableHttpClient client = HttpClients.createDefault();
         try {
-            Set<FilesDataUnit.Entry> files;
-            try {
-                files = FilesHelper.getFiles(filesInput);
-            } catch (DataUnitException ex1) {
-                throw ContextUtils.dpuException(this.ctx, ex1, "FilesToCkan.execute.exception.dataunit");
-            }
             for (FilesDataUnit.Entry file : files) {
                 CloseableHttpResponse responseUpdate = null;
                 boolean bResourceExists = false;
                 try {
-                    String storageId = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
-                    if (storageId == null || storageId.isEmpty()) {
-                        storageId = file.getSymbolicName();
+                    String resourceName = null;
+                    if (this.config.getResourceName() != null && !this.config.isUseFileNameAsResourceName()) {
+                        resourceName = this.config.getResourceName();
+                    } else {
+                        resourceName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
+                    }
+
+                    if (resourceName == null || resourceName.isEmpty()) {
+                        resourceName = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
-                    if (existingResources.containsKey(storageId)) {
+                    if (existingResources.containsKey(resourceName)) {
                         bResourceExists = true;
                         resource.setCreated(null);
                     }
-                    resource.setName(storageId);
+                    resource.setName(resourceName);
+
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
                     if (bResourceExists) {
                         if (config.getReplaceExisting()) {
-                            resourceBuilder.add("id", existingResources.get(storageId));
+                            resourceBuilder.add("id", existingResources.get(resourceName));
                         } else {
-                            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.replaceExisting", storageId);
+                            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.replaceExisting", resourceName);
                         }
                     }
 
                     URIBuilder uriBuilder = new URIBuilder(catalogApiLocation);
                     uriBuilder.setPath(uriBuilder.getPath());
                     HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
+                    for (Map.Entry<String, String> additionalHeader : additionalHttpHeaders.entrySet()) {
+                        httpPost.addHeader(additionalHeader.getKey(), additionalHeader.getValue());
+                    }
                     MultipartEntityBuilder builder = MultipartEntityBuilder.create()
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                            .addTextBody(PROXY_API_STORAGE_ID, storageId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
+                            .addTextBody(PROXY_API_STORAGE_ID, resourceName, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
@@ -216,7 +251,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     } else {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_CREATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     }
-                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, storageId);
+                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, resourceName);
                     HttpEntity entity = builder.build();
                     httpPost.setEntity(entity);
 
@@ -267,6 +302,10 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
         for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
             resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+        }
+
+        if (this.dpuContext.getPipelineExecutionActorExternalId() != null) {
+            resourceBuilder.add(CKAN_API_ACTOR_ID, this.dpuContext.getPipelineExecutionActorExternalId());
         }
 
         return resourceBuilder;
