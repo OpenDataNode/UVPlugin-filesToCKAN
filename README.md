@@ -31,6 +31,7 @@
 |--------------------------------------|----------------------------------------|
 |**dpu.uv-l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
 |**dpu.uv-l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
+|**dpu.uv-l-filesToCkan.http.header.key = value** | Custom HTTP header added to requests on CKAN, example: dpu.uv-l-filesToCkan.http.header.Host = www.myhost.com |
 
 ***
 
