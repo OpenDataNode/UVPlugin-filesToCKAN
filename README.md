@@ -28,7 +28,13 @@
 |--------------------------------------|----------------------------------------|
 |**dpu.uv-l-filesToCkan.secret.token**    |Token used to authenticate to CKAN, has to be set in backend.properties  |
 |**dpu.uv-l-filesToCkan.catalog.api.url** | URL where CKAN api is located, has to be set in backend.properties |
+|**dpu.uv-l-filesToCkan.http.header.key** | Custom HTTP header added to requests on CKAN |
 
+Examples:
+```
+dpu.uv-l-filesToCkan.http.header.X-Forwarded-Host = www.myhost.com
+dpu.uv-l-filesToCkan.http.header.Scheme = https
+```INI
 ***
 
 ### Inputs and outputs ###
@@ -43,6 +49,7 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
+|1.0.2              | Added possibility to define custom HTTP headers |
 |1.0.1              | bug fixes and update in build dependencies |
 |1.0.0              | First release                                   |
 
