@@ -73,10 +73,22 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_RESOURCE_CREATE = "resource_create";
 
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_SECRET_TOKEN}
+     */
+    @Deprecated
     public static final String CONFIGURATION_DPU_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
 
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_CATALOG_API_LOCATION}
+     */
+    @Deprecated
     public static final String CONFIGURATION_DPU_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
 
+    /**
+     * @deprecated Global configuration should be used {@link CONFIGURATION_HTTP_HEADER}
+     */
+    @Deprecated
     public static final String CONFIGURATION_DPU_HTTP_HEADER = "dpu.uv-l-filesToCkan.http.header.";
 
     public static final String CONFIGURATION_SECRET_TOKEN = "org.opendatanode.CKAN.secret.token";
