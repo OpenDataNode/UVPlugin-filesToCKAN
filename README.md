@@ -31,10 +31,11 @@
 |**dpu.uv-l-filesToCkan.http.header.key** | Custom HTTP header added to requests on CKAN |
 
 Examples:
-```
+```INI
 dpu.uv-l-filesToCkan.http.header.X-Forwarded-Host = www.myhost.com
 dpu.uv-l-filesToCkan.http.header.Scheme = https
-```INI
+```
+
 ***
 
 ### Inputs and outputs ###
