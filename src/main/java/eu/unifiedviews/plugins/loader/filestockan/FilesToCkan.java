@@ -2,10 +2,11 @@ package eu.unifiedviews.plugins.loader.filestockan;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +27,12 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.rio.UnsupportedRDFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +40,14 @@ import org.slf4j.LoggerFactory;
 import eu.unifiedviews.dataunit.DataUnit;
 import eu.unifiedviews.dataunit.DataUnitException;
 import eu.unifiedviews.dataunit.files.FilesDataUnit;
+import eu.unifiedviews.dataunit.rdf.RDFDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
+import eu.unifiedviews.helpers.dataunit.distribution.Distribution;
+import eu.unifiedviews.helpers.dataunit.distribution.DistributionMerger;
+import eu.unifiedviews.helpers.dataunit.distribution.DistributionToResourceConverter;
+import eu.unifiedviews.helpers.dataunit.distribution.DistributionToStatementsConverter;
 import eu.unifiedviews.helpers.dataunit.files.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.resource.Resource;
 import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
@@ -103,6 +115,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     @DataUnit.AsInput(name = "filesInput")
     public FilesDataUnit filesInput;
+
+    @DataUnit.AsInput(name = "distributionInput", optional = true)
+    public RDFDataUnit distributionInput;
 
     private DPUContext dpuContext;
 
@@ -173,6 +188,25 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         if (files.size() != 1 && !this.config.isUseFileNameAsResourceName()) {
             ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short", "FilesToCkan.execute.exception.filesCount.long");
             return;
+        }
+        Distribution distributionFromRdfInput = null;
+        if (distributionInput != null) {
+            if (files.size() != 1) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.tooManyFilesForOneDistribution");
+            }
+            RepositoryConnection con = null;
+            try {
+                con = distributionInput.getConnection();
+                RepositoryResult<Statement> repositoryResult;
+                repositoryResult = con.getStatements((org.openrdf.model.Resource) null, (URI) null, (Value) null, false, distributionInput.getMetadataGraphnames().toArray(new org.openrdf.model.Resource[0]));
+                List<Statement> statementList = new ArrayList<>();
+                while (repositoryResult.hasNext()) {
+                    statementList.add(repositoryResult.next());
+                }
+                distributionFromRdfInput = DistributionToStatementsConverter.statementsToDistribution(statementList);
+            } catch (RepositoryException | DataUnitException ex) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.dataunit");
+            }
         }
 
         CloseableHttpResponse response = null;
@@ -255,6 +289,11 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                         resourceName = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
+                    if (distributionFromRdfInput != null) {
+                        Distribution distributionFromSymbolicName = DistributionToResourceConverter.resourceToDistribution(resource);
+                        Distribution mergedDistribution = DistributionMerger.merge(distributionFromRdfInput, distributionFromSymbolicName);
+                        resource = DistributionToResourceConverter.distributionToResource(mergedDistribution);
+                    }
                     if (existingResources.containsKey(resourceName)) {
                         bResourceExists = true;
                         resource.setCreated(null);
@@ -289,7 +328,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     } else {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_CREATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     }
-                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, resourceName);
+                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, resourceName);
                     HttpEntity entity = builder.build();
                     httpPost.setEntity(entity);
 
