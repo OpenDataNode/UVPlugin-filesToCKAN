@@ -18,6 +18,7 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -49,6 +50,7 @@ import eu.unifiedviews.helpers.dataunit.distribution.DistributionMerger;
 import eu.unifiedviews.helpers.dataunit.distribution.DistributionToResourceConverter;
 import eu.unifiedviews.helpers.dataunit.distribution.DistributionToStatementsConverter;
 import eu.unifiedviews.helpers.dataunit.files.FilesHelper;
+import eu.unifiedviews.helpers.dataunit.rdf.RDFHelper;
 import eu.unifiedviews.helpers.dataunit.resource.Resource;
 import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
 import eu.unifiedviews.helpers.dataunit.resource.ResourceHelpers;
@@ -198,7 +200,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             try {
                 con = distributionInput.getConnection();
                 RepositoryResult<Statement> repositoryResult;
-                repositoryResult = con.getStatements((org.openrdf.model.Resource) null, (URI) null, (Value) null, false, distributionInput.getMetadataGraphnames().toArray(new org.openrdf.model.Resource[0]));
+                repositoryResult = con.getStatements((org.openrdf.model.Resource) null, (URI) null, (Value) null, false, RDFHelper.getGraphsURIArray(distributionInput));
                 List<Statement> statementList = new ArrayList<>();
                 while (repositoryResult.hasNext()) {
                     statementList.add(repositoryResult.next());
@@ -281,18 +283,21 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     String resourceName = null;
                     if (this.config.getResourceName() != null && !this.config.isUseFileNameAsResourceName()) {
                         resourceName = this.config.getResourceName();
-                    } else {
-                        resourceName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
-                    }
-
-                    if (resourceName == null || resourceName.isEmpty()) {
-                        resourceName = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
                     if (distributionFromRdfInput != null) {
                         Distribution distributionFromSymbolicName = DistributionToResourceConverter.resourceToDistribution(resource);
                         Distribution mergedDistribution = DistributionMerger.merge(distributionFromRdfInput, distributionFromSymbolicName);
                         resource = DistributionToResourceConverter.distributionToResource(mergedDistribution);
+                        if (StringUtils.isEmpty(resourceName)) {
+                            resourceName = resource.getName();
+                        }
+                    }
+                    if (StringUtils.isEmpty(resourceName) && this.config.isUseFileNameAsResourceName()) {
+                        resourceName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
+                    }
+                    if (StringUtils.isEmpty(resourceName)) {
+                        resourceName = file.getSymbolicName();
                     }
                     if (existingResources.containsKey(resourceName)) {
                         bResourceExists = true;
