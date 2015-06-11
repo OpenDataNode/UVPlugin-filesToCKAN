@@ -113,6 +113,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CONFIGURATION_HTTP_HEADER = "org.opendatanode.CKAN.http.header.";
 
+    public static final String CONFIGURATION_USE_EXTRAS = "org.opendatanode.CKAN.use.extras";
+
     private static final Logger LOG = LoggerFactory.getLogger(FilesToCkan.class);
 
     @DataUnit.AsInput(name = "filesInput")
@@ -134,6 +136,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         String longMessage = String.valueOf(config);
         dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
         Map<String, String> environment = dpuContext.getEnvironment();
+
+        Boolean useExtras = Boolean.valueOf(environment.get(CONFIGURATION_USE_EXTRAS));
 
         String secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
         if (isEmpty(secretToken)) {
@@ -305,7 +309,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     }
                     resource.setName(resourceName);
 
-                    JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
+                    JsonObjectBuilder resourceBuilder = buildResource(factory, resource, useExtras);
                     if (bResourceExists) {
                         if (config.getReplaceExisting()) {
                             resourceBuilder.add("id", existingResources.get(resourceName));
@@ -387,15 +391,17 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         return false;
     }
 
-    private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource) {
+    private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource, boolean useExtras) {
 
         JsonObjectBuilder resourceBuilder = factory.createObjectBuilder();
         for (Map.Entry<String, String> mapEntry : ResourceConverter.resourceToMap(resource).entrySet()) {
             resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
         }
-
-        for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
-            resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+        
+        if (useExtras) {
+            for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
+                resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+            }
         }
 
         if (this.dpuContext.getPipelineExecutionActorExternalId() != null) {
