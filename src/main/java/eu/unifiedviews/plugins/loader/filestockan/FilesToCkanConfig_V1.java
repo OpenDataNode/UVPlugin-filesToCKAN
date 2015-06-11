@@ -7,9 +7,9 @@ public class FilesToCkanConfig_V1 {
 
     private Boolean replaceExisting = Boolean.TRUE;
 
-    private String resourceName;
+    private String resourceName = null;
 
-    private boolean useFileNameAsResourceName = false;
+    private boolean useFileNameAsResourceName = true;
 
     public FilesToCkanConfig_V1() {
     }
