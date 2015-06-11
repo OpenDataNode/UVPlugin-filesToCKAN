@@ -333,7 +333,12 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     } else {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_CREATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
                     }
-                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, resourceName);
+                    String fileName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
+                    if (fileName == null) {
+                        fileName = file.getSymbolicName();
+                    }
+                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, fileName);
+
                     HttpEntity entity = builder.build();
                     httpPost.setEntity(entity);
 
