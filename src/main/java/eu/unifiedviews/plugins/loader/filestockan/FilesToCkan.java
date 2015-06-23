@@ -2,7 +2,6 @@ package eu.unifiedviews.plugins.loader.filestockan;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +16,7 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -26,6 +26,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.UnsupportedRDFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import eu.unifiedviews.dataunit.DataUnit;
 import eu.unifiedviews.dataunit.DataUnitException;
 import eu.unifiedviews.dataunit.files.FilesDataUnit;
+import eu.unifiedviews.dataunit.rdf.RDFDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
@@ -40,6 +42,7 @@ import eu.unifiedviews.helpers.dataunit.files.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.resource.Resource;
 import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
 import eu.unifiedviews.helpers.dataunit.resource.ResourceHelpers;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceMerger;
 import eu.unifiedviews.helpers.dataunit.virtualpath.VirtualPathHelpers;
 import eu.unifiedviews.helpers.dpu.config.ConfigHistory;
 import eu.unifiedviews.helpers.dpu.context.ContextUtils;
@@ -47,6 +50,8 @@ import eu.unifiedviews.helpers.dpu.exec.AbstractDpu;
 
 @DPU.AsLoader
 public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
+    public static final String distributionSymbolicName = "distributionMetadata";
+
     public static final String PROXY_API_ACTION = "action";
 
     public static final String PROXY_API_PIPELINE_ID = "pipeline_id";
@@ -103,6 +108,9 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     @DataUnit.AsInput(name = "filesInput")
     public FilesDataUnit filesInput;
+
+    @DataUnit.AsInput(name = "distributionInput", optional = true)
+    public RDFDataUnit distributionInput;
 
     private DPUContext dpuContext;
 
@@ -173,6 +181,18 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         if (files.size() != 1 && !this.config.isUseFileNameAsResourceName()) {
             ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short", "FilesToCkan.execute.exception.filesCount.long");
             return;
+        }
+
+        Resource distributionFromRdfInput = null;
+        if (distributionInput != null) {
+            if (files.size() != 1) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.tooManyFilesForOneDistribution");
+            }
+            try {
+                distributionFromRdfInput = ResourceHelpers.getResource(distributionInput, distributionSymbolicName);
+            } catch (DataUnitException ex) {
+                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.dataunit");
+            }
         }
 
         CloseableHttpResponse response = null;
@@ -247,14 +267,21 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     String resourceName = null;
                     if (this.config.getResourceName() != null && !this.config.isUseFileNameAsResourceName()) {
                         resourceName = this.config.getResourceName();
-                    } else {
-                        resourceName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
-                    }
-
-                    if (resourceName == null || resourceName.isEmpty()) {
-                        resourceName = file.getSymbolicName();
                     }
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
+                    if (distributionFromRdfInput != null) {
+                        Resource mergedDistribution = ResourceMerger.merge(distributionFromRdfInput, resource);
+                        resource = mergedDistribution;
+                        if (StringUtils.isEmpty(resourceName)) {
+                            resourceName = resource.getName();
+                        }
+                    }
+                    if (StringUtils.isEmpty(resourceName) && this.config.isUseFileNameAsResourceName()) {
+                        resourceName = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
+                    }
+                    if (StringUtils.isEmpty(resourceName)) {
+                        resourceName = file.getSymbolicName();
+                    }
                     if (existingResources.containsKey(resourceName)) {
                         bResourceExists = true;
                         resource.setCreated(null);
@@ -293,7 +320,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     if (fileName == null) {
                         fileName = file.getSymbolicName();
                     }
-                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, fileName);
+                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, fileName);
+
                     HttpEntity entity = builder.build();
                     httpPost.setEntity(entity);
 
