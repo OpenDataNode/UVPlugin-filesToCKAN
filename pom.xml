@@ -18,7 +18,7 @@
 	<packaging>bundle</packaging>
 
 	<properties>
-		<dpu.package>eu.unifiedviews.plugins.loader.filestockan</dpu.package>
+		<dpu.package>org.opendatanode.plugins.loader.filestockan</dpu.package>
 		<dpu.mainClass>FilesToCkan</dpu.mainClass>
 	</properties>
 

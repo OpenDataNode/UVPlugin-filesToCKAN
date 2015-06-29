@@ -1,4 +1,4 @@
-package eu.unifiedviews.plugins.loader.filestockan;
+package org.opendatanode.plugins.loader.filestockan;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +47,7 @@ import eu.unifiedviews.helpers.dataunit.virtualpath.VirtualPathHelpers;
 import eu.unifiedviews.helpers.dpu.config.ConfigHistory;
 import eu.unifiedviews.helpers.dpu.context.ContextUtils;
 import eu.unifiedviews.helpers.dpu.exec.AbstractDpu;
+import eu.unifiedviews.plugins.loader.filestockan.FilesToCkanConfig_V1;
 
 @DPU.AsLoader
 public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
