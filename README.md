@@ -19,7 +19,7 @@
 
 |Parameter                        |Description                             |
 |---------------------------------|----------------------------------------|
-|**CKAN resource name** |Resource name to create in CKAN  |
+|**CKAN resource name** |Resource name to create in CKAN, this has precedence over input from e-distributionMetadata, and if even that is not set, it will use VirtualPath or symbolic name as resource name. |
 |**Use file name as CKAN resource name** |If checked, file name is used as resource name in CKAN. Must be checked if multiple files on input, otherwise DPU fails  |
 |**Overwrite existing resources** |If checked, existing resources are overwritten  |
 
@@ -58,7 +58,8 @@ org.opendatanode.CKAN.http.header.X-Forwarded-Proto = https
 
 |Name                |Type       |DataUnit                         |Description                        |
 |--------------------|-----------|---------------------------------|-----------------------------------|
-|filesInput |i |FilesDataUnit |File loaded to specified CKAN instance/  |
+|filesInput |i |FilesDataUnit |File loaded to specified CKAN instance  |
+|distributionInput |i (optional) |RDFDataUnit | Distribution metadata produced by e-distributionMetadata  |
 
 ***
 
@@ -66,7 +67,7 @@ org.opendatanode.CKAN.http.header.X-Forwarded-Proto = https
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
-|1.1.0              | Changes in DPU API v 2.1.0, new actor ID parameter is sent to CKAN if available |
+|1.1.0              | Changes in DPU API v 2.1.0, new actor ID parameter is sent to CKAN if available. Input from e-distributionMetadata introduced. |
 |1.0.2              | Added possibility to define custom HTTP headers |
 |1.0.1              | bug fixes and update in build dependencies |
 |1.0.0              | First release                                   |

@@ -1,4 +1,4 @@
-package eu.unifiedviews.plugins.loader.filestockan;
+package org.opendatanode.plugins.loader.filestockan;
 
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.CheckBox;
@@ -7,6 +7,7 @@ import com.vaadin.ui.VerticalLayout;
 
 import eu.unifiedviews.dpu.config.DPUConfigException;
 import eu.unifiedviews.helpers.dpu.vaadin.dialog.AbstractDialog;
+import eu.unifiedviews.plugins.loader.filestockan.FilesToCkanConfig_V1;
 
 /**
  * DPU's configuration dialog. User can use this dialog to configure DPU
