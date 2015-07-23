@@ -14,11 +14,11 @@
 	<artifactId>uv-l-filesToCkan</artifactId>
 	<name>L-FilesToCkan</name>
 	<description>Loads files as resources to CKAN catalog</description>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 	<packaging>bundle</packaging>
 
 	<properties>
-		<dpu.package>eu.unifiedviews.plugins.loader.filestockan</dpu.package>
+		<dpu.package>org.opendatanode.plugins.loader.filestockan</dpu.package>
 		<dpu.mainClass>FilesToCkan</dpu.mainClass>
 	</properties>
 

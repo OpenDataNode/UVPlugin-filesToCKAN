@@ -1,4 +1,4 @@
-package eu.unifiedviews.plugins.loader.filestockan;
+package org.opendatanode.plugins.loader.filestockan;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -26,7 +27,6 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.UnsupportedRDFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +47,7 @@ import eu.unifiedviews.helpers.dataunit.virtualpath.VirtualPathHelpers;
 import eu.unifiedviews.helpers.dpu.config.ConfigHistory;
 import eu.unifiedviews.helpers.dpu.context.ContextUtils;
 import eu.unifiedviews.helpers.dpu.exec.AbstractDpu;
+import eu.unifiedviews.plugins.loader.filestockan.FilesToCkanConfig_V1;
 
 @DPU.AsLoader
 public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
@@ -163,7 +164,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
             }
         }
 
-        String userId = (this.dpuContext.getPipelineExecutionOwnerExternalId() != null) ? this.dpuContext.getPipelineExecutionOwnerExternalId()
+        String userId = (this.dpuContext.getPipelineExecutionOwnerExternalId() != null) ? this.dpuContext
+                .getPipelineExecutionOwnerExternalId()
                 : this.dpuContext.getPipelineExecutionOwner();
         String pipelineId = String.valueOf(dpuContext.getPipelineId());
 
@@ -179,7 +181,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         }
 
         if (files.size() != 1 && !this.config.isUseFileNameAsResourceName()) {
-            ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short", "FilesToCkan.execute.exception.filesCount.long");
+            ContextUtils.sendError(this.ctx, "FilesToCkan.execute.exception.filesCount.short",
+                    "FilesToCkan.execute.exception.filesCount.long");
             return;
         }
 
@@ -287,6 +290,10 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                         resource.setCreated(null);
                     }
                     resource.setName(resourceName);
+                    String fileExtension = getFileExtension(file);
+                    if (fileExtension != null && fileExtension.length() > 0) {
+                        resource.setFormat(fileExtension);
+                    }
 
                     JsonObjectBuilder resourceBuilder = buildResource(factory, resource);
                     if (bResourceExists) {
@@ -303,13 +310,15 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     for (Map.Entry<String, String> additionalHeader : additionalHttpHeaders.entrySet()) {
                         httpPost.addHeader(additionalHeader.getKey(), additionalHeader.getValue());
                     }
-                    MultipartEntityBuilder builder = MultipartEntityBuilder.create()
+                    MultipartEntityBuilder builder = MultipartEntityBuilder
+                            .create()
                             .addTextBody(PROXY_API_TYPE, PROXY_API_TYPE_FILE, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_STORAGE_ID, resourceName, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_PIPELINE_ID, pipelineId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_USER_ID, userId, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
                             .addTextBody(PROXY_API_TOKEN, secretToken, ContentType.TEXT_PLAIN.withCharset("UTF-8"))
-                            .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(), ContentType.APPLICATION_JSON.withCharset("UTF-8"));
+                            .addTextBody(PROXY_API_DATA, resourceBuilder.build().toString(),
+                                    ContentType.APPLICATION_JSON.withCharset("UTF-8"));
 
                     if (bResourceExists) {
                         builder.addTextBody(PROXY_API_ACTION, CKAN_API_RESOURCE_UPDATE, ContentType.TEXT_PLAIN.withCharset("UTF-8"));
@@ -320,7 +329,8 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                     if (fileName == null) {
                         fileName = file.getSymbolicName();
                     }
-                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())), ContentType.DEFAULT_BINARY, fileName);
+                    builder.addBinaryBody(PROXY_API_ATTACHMENT_NAME, new File(java.net.URI.create(file.getFileURIString())),
+                            ContentType.DEFAULT_BINARY, fileName);
 
                     HttpEntity entity = builder.build();
                     httpPost.setEntity(entity);
@@ -386,5 +396,13 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
         }
 
         return resourceBuilder;
+    }
+
+    private String getFileExtension(FilesDataUnit.Entry file) throws DataUnitException {
+        String fileName = VirtualPathHelpers.getVirtualPath(this.filesInput, file.getSymbolicName());
+        if (fileName == null) {
+            fileName = file.getSymbolicName();
+        }
+        return FilenameUtils.getExtension(fileName);
     }
 }
