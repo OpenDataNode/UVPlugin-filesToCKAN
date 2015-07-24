@@ -1,3 +1,10 @@
+L-FilesToCkan
+----------
+
+v1.1.2-SNAPSHOT
+---
+* Improved description (About)
+
 v1.1.1
 ---
 * DPU sends resource format based on files' extension
