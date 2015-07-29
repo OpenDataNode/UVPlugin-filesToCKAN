@@ -81,24 +81,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
     public static final String CKAN_API_ACTOR_ID = "actor_id";
 
-    /**
-     * @deprecated Global configuration should be used {@link CONFIGURATION_SECRET_TOKEN}
-     */
-    @Deprecated
-    public static final String CONFIGURATION_DPU_SECRET_TOKEN = "dpu.uv-l-filesToCkan.secret.token";
-
-    /**
-     * @deprecated Global configuration should be used {@link CONFIGURATION_CATALOG_API_LOCATION}
-     */
-    @Deprecated
-    public static final String CONFIGURATION_DPU_CATALOG_API_LOCATION = "dpu.uv-l-filesToCkan.catalog.api.url";
-
-    /**
-     * @deprecated Global configuration should be used {@link CONFIGURATION_HTTP_HEADER}
-     */
-    @Deprecated
-    public static final String CONFIGURATION_DPU_HTTP_HEADER = "dpu.uv-l-filesToCkan.http.header.";
-
     public static final String CONFIGURATION_SECRET_TOKEN = "org.opendatanode.CKAN.secret.token";
 
     public static final String CONFIGURATION_CATALOG_API_LOCATION = "org.opendatanode.CKAN.api.url";
@@ -129,20 +111,12 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
 
         String secretToken = environment.get(CONFIGURATION_SECRET_TOKEN);
         if (isEmpty(secretToken)) {
-            LOG.debug("Missing global configuration for CKAN secret token, trying to use DPU specific configuration");
-            secretToken = environment.get(CONFIGURATION_DPU_SECRET_TOKEN);
-            if (isEmpty(secretToken)) {
-                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingSecretToken");
-            }
+            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingSecretToken");
         }
 
         String catalogApiLocation = environment.get(CONFIGURATION_CATALOG_API_LOCATION);
         if (isEmpty(catalogApiLocation)) {
-            LOG.debug("Missing global configuration for CKAN API location, trying to use DPU specific configuration");
-            catalogApiLocation = environment.get(CONFIGURATION_DPU_CATALOG_API_LOCATION);
-            if (isEmpty(catalogApiLocation)) {
-                throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
-            }
+            throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.missingCatalogApiLocation");
         }
 
         Map<String, String> additionalHttpHeaders = new HashMap<>();
@@ -151,16 +125,6 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                 String headerName = configEntry.getKey().replace(CONFIGURATION_HTTP_HEADER, "");
                 String headerValue = configEntry.getValue();
                 additionalHttpHeaders.put(headerName, headerValue);
-            }
-        }
-        if (additionalHttpHeaders.isEmpty()) {
-            LOG.debug("Missing global configuration for additional HTTP headers, trying to use DPU specific configuration");
-            for (Map.Entry<String, String> configEntry : environment.entrySet()) {
-                if (configEntry.getKey().startsWith(CONFIGURATION_DPU_HTTP_HEADER)) {
-                    String headerName = configEntry.getKey().replace(CONFIGURATION_DPU_HTTP_HEADER, "");
-                    String headerValue = configEntry.getValue();
-                    additionalHttpHeaders.put(headerName, headerValue);
-                }
             }
         }
 
