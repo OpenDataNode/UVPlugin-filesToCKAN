@@ -311,7 +311,7 @@ public class FilesToCkan extends AbstractDpu<FilesToCkanConfig_V1> {
                             throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.fail");
                         }
                     } else {
-                        LOG.warn("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
+                        LOG.error("Response:" + EntityUtils.toString(responseUpdate.getEntity()));
                         throw ContextUtils.dpuException(this.ctx, "FilesToCkan.execute.exception.fail");
                     }
                 } catch (DPUException ex) {
