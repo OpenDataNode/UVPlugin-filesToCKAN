@@ -14,4 +14,4 @@ Nahrá súbory do zadanej inštancie CKAN
 
 |Meno |Typ | Dátová hrana | Popis | Povinné |
 |:--------|:------:|:------:|:-------------|:---------------------:|
-|distributionInput |i| RDFDataUnit| Distribučné metadáta z e-distributionMetadata ||
+|distributionInput |vstup| RDFDataUnit| Distribučné metadáta z e-distributionMetadata | |
