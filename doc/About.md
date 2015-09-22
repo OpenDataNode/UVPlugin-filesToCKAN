@@ -15,4 +15,4 @@ Loads files to the specified CKAN instance
 |Name |Type | DataUnit | Description | Mandatory |
 |:--------|:------:|:------:|:-------------|:---------------------:|
 |filesInput        |i| FilesDataUnit| File loaded to specified CKAN instance|x|
-|distributionInput |i| RDFDataUnit| Distribution metadata produced by e-distributionMetadata||
+|distributionInput |i| RDFDataUnit| Distribution metadata produced by e-distributionMetadata| |
